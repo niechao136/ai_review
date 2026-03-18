@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-code-reviewer"
+version = "0.1.0"
+dependencies = [
+    "openai",
+    "python-dotenv",
+    "typer[all]",
+    "rich"  # 让终端输出更好看
+]
+
+[project.scripts]
+# 命令名 = 模块名:函数名
+ai-review = "ai_review.cli:app"
