@@ -1,13 +1,10 @@
 import typer
 import os
 import json
-from dotenv import load_dotenv
 from pathlib import Path
 from typing import Optional
 from .config import load_full_config, GLOBAL_CONFIG_PATH
 from .review import review_code
-
-load_dotenv()
 
 app = typer.Typer()
 

@@ -1,7 +1,10 @@
 import typer
 import os
 import json
+from dotenv import load_dotenv
 from pathlib import Path
+
+load_dotenv()
 
 # 全局配置文件路径：用户家目录下的 .ai_reviewer.json
 GLOBAL_CONFIG_PATH = Path.home() / ".ai_review.json"
