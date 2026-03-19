@@ -2,7 +2,7 @@ import subprocess
 import os
 
 
-def get_clean_diff(max_filesize_kb: int = 100):
+def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
     """
     智能提取 Git 变更：
     1. 自动识别并剔除二进制文件（图片、模型、压缩包等）
@@ -14,11 +14,24 @@ def get_clean_diff(max_filesize_kb: int = 100):
     except (ValueError, TypeError):
         max_filesize_kb = 100.0  # 转换失败时的兜底值
     try:
+        # 如果能解析出 ref^，说明有父节点
+        subprocess.run(["git", "rev-parse", f"{ref}^"], check=True, capture_output=True)
+        has_parent = True
+    except subprocess.CalledProcessError:
+        has_parent = False
+    if has_parent:
+        base_ref = f"{ref}^"
+    else:
+        # 如果是初始提交，对比“空树” (Magic Hash for empty tree)
+        # 这会让 git diff 列出该提交中的所有文件内容
+        base_ref = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+    target_ref = ref
+    try:
         # 1. 获取变更统计 (--numstat)
         # 输出格式：增加行数  删除行数  文件路径
         # 对于二进制文件，增加/删除行数会显示为 "-"
         stats_cmd = [
-            "git", "diff", "HEAD~1", "HEAD",
+            "git", "diff", base_ref, target_ref,
             "--numstat",
             "--",
             ".",
@@ -64,22 +77,13 @@ def get_clean_diff(max_filesize_kb: int = 100):
             return ""
 
         # 2. 提取最终的文本差异
-        # 使用 --unified=3 (默认) 保留上下文，方便 AI 理解代码逻辑
-        diff_cmd = ["git", "diff", "HEAD~1", "HEAD", "--"] + valid_files
+        diff_cmd = ["git", "diff", base_ref, target_ref, "--"] + valid_files
         final_diff = subprocess.run(diff_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
 
-        return final_diff.stdout
+        return final_diff.stdout, True
 
     except subprocess.CalledProcessError as e:
         stderr_msg = e.stderr.decode('utf-8', 'replace') if isinstance(e.stderr, bytes) else e.stderr
-        return f"❌ Git 命令执行失败: {stderr_msg}"
+        return f"❌ Git 命令执行失败: {stderr_msg}", False
     except Exception as e:
-        return f"❌ 提取 Diff 时发生未知错误: {str(e)}"
-
-
-def get_staged_diff(max_filesize_kb: int = 100):
-    """
-    可选：如果你想在 commit 之前（暂存区）进行评审，只需把命令改为 --cached
-    """
-    # 逻辑同上，只需将 "HEAD~1", "HEAD" 替换为 "--cached"
-    pass
+        return f"❌ 提取 Diff 时发生未知错误: {str(e)}", False

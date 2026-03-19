@@ -13,7 +13,7 @@ from .prompts import SYSTEM_PROMPT
 console = Console()
 
 
-def review_code():
+def review_code(ref: str):
     # 1. 加载配置
     config = load_full_config()
     api_key = config.get("api_key")
@@ -24,7 +24,11 @@ def review_code():
 
     # 2. 获取经过智能过滤的 Diff
     console.print("[cyan]🔍 正在提取 Git 变更并进行智能过滤...[/cyan]")
-    diff_content = get_clean_diff(max_filesize_kb=config.get("max_size", 100))
+    diff_content, success = get_clean_diff(ref=ref, max_filesize_kb=config.get("max_size", 100.0))
+
+    if not success:
+        console.print(f"[red]{diff_content}[/red]")
+        return
 
     if not diff_content or diff_content.strip() == "":
         console.print("[yellow]分段中未发现需要评审的文本变更，跳过。[/yellow]")
