@@ -78,15 +78,17 @@ def config_cli(key: str = None, value: str = None, list_all: bool = False):
 
     # 场景 2: 没有任何参数
     if key is None:
-        console.print("[yellow]用法:[/yellow] ai-review config [key] [value] 或 ai-review config --list")
+        console.print("[yellow]用法:[/yellow] ai-review config \[key] \[value] 或 ai-review config --list")
         return
 
     # 场景 3: 只有 Key -> 查询操作
     if value is None:
         if key in conf:
+            display_v = conf[key]
             # 如果是查询 api_key，仍然显示脱敏结果，除非用户确实需要原文
-            val = conf[key]
-            console.print(f"[cyan]{key}[/cyan] = [white]{val}[/white]")
+            if key == "api_key" and conf[key]:
+                display_v = f"{conf[key][:8]}...{conf[key][-4:]}" if len(conf[key]) > 12 else "******"
+            console.print(f"[cyan]{key}[/cyan] = [white]{display_v}[/white]")
         else:
             console.print(f"[bold red]✘ 未找到配置项: {key}[/bold red]")
         return
