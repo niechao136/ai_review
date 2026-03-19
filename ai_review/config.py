@@ -4,8 +4,6 @@ import json
 from dotenv import load_dotenv
 from pathlib import Path
 
-load_dotenv()
-
 # 全局配置文件路径：用户家目录下的 .ai_reviewer.json
 GLOBAL_CONFIG_PATH = Path.home() / ".ai_review.json"
 
@@ -39,6 +37,14 @@ def load_full_config():
 
     # 2. 从项目环境变量加载 (优先级最高)
     # 这样你依然可以在特定项目中通过 export 或 .env 临时覆盖设置
+    dotenv_path = Path.cwd() / ".env"
+    if dotenv_path.exists():
+        load_dotenv(dotenv_path=dotenv_path, override=True)
+        # 调试用：执行 ai-review review 时能看到是否加载成功
+        typer.echo(f"✅ Loaded .env from: {dotenv_path}")
+    else:
+        typer.echo(f"⚠️ No .env found at: {dotenv_path}")
+        pass
     conf["api_key"] = os.getenv("AI_API_KEY", conf["api_key"])
     conf["base_url"] = os.getenv("AI_BASE_URL", conf["base_url"])
     conf["model"] = os.getenv("AI_MODEL", conf["model"])
