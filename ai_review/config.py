@@ -11,8 +11,8 @@ def get_default_config():
     """默认配置模板"""
     return {
         "api_key": "",
-        "base_url": "https://api.deepseek.com",
-        "model": "deepseek-chat",
+        "base_url": "",
+        "model": "",
         "proxy": "",
         "max_lines": 500,  # 限制 diff 行数，防止浪费 token
         "max_size": 100 # 限制文件大小，单位 KB
@@ -54,3 +54,38 @@ def load_full_config():
     conf["max_size"] = os.getenv("MAX_SIZE", conf["max_size"])
 
     return conf
+
+def config_cli(key: str = None, value: str = None, list_all: bool = False):
+    conf = load_full_config()
+
+    # 场景 1: 列出所有配置内容
+    if list_all:
+        for k, v in conf.items():
+            # 使用 Rich 或者简单的 print
+            typer.echo(f"{k} = {v}")
+        return
+
+    # 场景 2: 没有任何参数，显示帮助
+    if key is None:
+        typer.echo("用法: ai-review config [key] [value] 或 ai-review config --list")
+        raise typer.Exit()
+
+    # 场景 3: 只有 Key，没有 Value -> 查询操作
+    if value is None:
+        if key in conf:
+            typer.echo(conf[key])
+        else:
+            typer.secho(f"❌ 未找到配置项: {key}", fg=typer.colors.RED)
+        return
+
+    # 场景 4: Key 和 Value 都有 -> 写入操作
+    # 这里可以做一层简单的校验
+    valid_keys = conf.keys()
+    if key not in valid_keys:
+        typer.confirm(f"⚠️ {key} 不是预设配置项，确认要添加吗？", abort=True)
+
+    conf[key] = value
+    with open(GLOBAL_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(conf, f, indent=4, ensure_ascii=False)
+
+    typer.secho(f"✅ 已设置 {key} 为 {value}", fg=typer.colors.GREEN)

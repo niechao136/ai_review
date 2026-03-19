@@ -17,9 +17,15 @@ def review_code(ref: str):
     # 1. 加载配置
     config = load_full_config()
     api_key = config.get("api_key")
+    base_url = config.get("base_url")
+    model = config.get("model")
 
-    if not api_key:
-        console.print("[red]❌ 错误: 未配置 API Key。请运行 `ai-review config api_key <your_key>`[/red]")
+    if not base_url:
+        console.print("[red]❌ 错误: 未配置 Base Url。请运行 `ai-review config base_url <your_url>`[/red]")
+        sys.exit(1)
+
+    if not model:
+        console.print("[red]❌ 错误: 未配置 Model。请运行 `ai-review config model <your_model>`[/red]")
         sys.exit(1)
 
     # 2. 获取经过智能过滤的 Diff
@@ -28,7 +34,7 @@ def review_code(ref: str):
 
     if not success:
         console.print(f"[red]{diff_content}[/red]")
-        return
+        sys.exit(1)
 
     if not diff_content or diff_content.strip() == "":
         console.print("[yellow]分段中未发现需要评审的文本变更，跳过。[/yellow]")
@@ -44,12 +50,12 @@ def review_code(ref: str):
     # 3. 初始化 OpenAI 客户端
     client = OpenAI(
         api_key=api_key,
-        base_url=config.get("base_url", "https://api.deepseek.com"),
+        base_url=base_url,
         http_client=http_client
     )
 
     # 4. 调用 AI 进行评审
-    console.print(f"[bold green]🤖 AI ({config.get('model')}) 正在评审中...[/bold green]\n")
+    console.print(f"[bold green]🤖 AI ({model}) 正在评审中...[/bold green]\n")
 
     try:
         system: ChatCompletionSystemMessageParam = {
@@ -61,7 +67,7 @@ def review_code(ref: str):
             "content": f"请评审以下 Git Diff 变更：\n\n{diff_content}"
         }
         response = client.chat.completions.create(
-            model=config.get("model", "deepseek-chat"),
+            model=model,
             messages=[system, user],
             stream=True  # 开启流式传输，体验更好
         )
