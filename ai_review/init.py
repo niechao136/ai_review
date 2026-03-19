@@ -46,8 +46,13 @@ def init_cli():
                 backup_path.unlink()
             hook_path.rename(backup_path)
             console.print(f"[dim]已为现有的 pre-push 创建备份: {backup_path}[/dim]")
+        except PermissionError:
+            console.print("[bold red]✘ 权限不足: 无法备份或修改 Git Hook。[/bold red]")
+            console.print("[yellow]提示: 请尝试以管理员身份运行，或手动检查 .git/hooks 权限。[/yellow]")
+            sys.exit(1)
         except Exception as e:
-            console.print(f"[yellow]读取现有 Hook 失败，将尝试直接覆盖: {e}[/yellow]")
+            console.print(f"[yellow]! 备份失败 ({e})，为安全起见停止自动注入。[/yellow]")
+            sys.exit(1)
 
     # 逻辑优化：判断是否需要注入或更新
     if BEGIN_MARKER in existing_content and END_MARKER in existing_content:

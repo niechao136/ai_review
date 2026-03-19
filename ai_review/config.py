@@ -95,7 +95,7 @@ def config_cli(key: str = None, value: str = None, list_all: bool = False):
     # 检查是否为有效配置项
     if key not in conf and key not in get_default_config():
         console.print(f"[yellow]! [bold]{key}[/bold] 不是标准配置项。[/yellow]")
-        # 注意：Typer 的 Confirm 逻辑建议保留在 cli.py 装饰器层，这里直接写入或简单判断
+        return
 
     conf[key] = value
     try:

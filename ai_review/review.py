@@ -42,7 +42,7 @@ def review_code(ref: str):
     proxy_url = config.get("proxy")
     if proxy_url:
         http_client = httpx.Client(proxy=proxy_url)
-        console.print(f"[dim]🌐 使用代理: {proxy_url}[/dim]")
+        console.print(f"[dim]-> 使用代理: {proxy_url}[/dim]")
     else:
         http_client = None
     # 3. 初始化 OpenAI 客户端
