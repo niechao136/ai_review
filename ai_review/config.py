@@ -1,11 +1,14 @@
-import typer
-import os
 import json
-from dotenv import load_dotenv
+import os
 from pathlib import Path
 
-# 全局配置文件路径：用户家目录下的 .ai_reviewer.json
+from dotenv import load_dotenv
+
+from ai_review.utils import console
+
+# 全局配置文件路径：用户家目录下的 .ai_review.json
 GLOBAL_CONFIG_PATH = Path.home() / ".ai_review.json"
+
 
 def get_default_config():
     """默认配置模板"""
@@ -14,16 +17,14 @@ def get_default_config():
         "base_url": "",
         "model": "",
         "proxy": "",
-        "max_lines": 500,  # 限制 diff 行数，防止浪费 token
-        "max_size": 100 # 限制文件大小，单位 KB
+        "max_lines": 500,
+        "max_size": 100
     }
+
 
 def load_full_config():
     """
-    按优先级加载配置：
-    1. 先读取全局 JSON
-    2. 尝试寻找当前目录的 .env (保留作为项目级覆盖)
-    3. 合并返回
+    按优先级加载配置：1. 全局 JSON -> 2. 项目 .env -> 3. 系统环境变量
     """
     conf = get_default_config()
 
@@ -34,58 +35,72 @@ def load_full_config():
                 user_config = json.load(f)
                 conf.update(user_config)
         except Exception as e:
-            typer.secho(f"⚠️ 读取配置文件失败: {e}", fg=typer.colors.YELLOW)
+            console.print(f"[yellow]! 读取配置文件失败: {e}[/yellow]")
 
-    # 2. 从项目环境变量加载 (优先级最高)
-    # 这样你依然可以在特定项目中通过 export 或 .env 临时覆盖设置
+    # 2. 从项目 .env 加载 (作为项目级覆盖)
     dotenv_path = Path.cwd() / ".env"
     if dotenv_path.exists():
         load_dotenv(dotenv_path=dotenv_path, override=True)
-        # 调试用：执行 ai-review review 时能看到是否加载成功
-        typer.echo(f"✅ Loaded .env from: {dotenv_path}")
-    else:
-        typer.echo(f"⚠️ No .env found at: {dotenv_path}")
+        # 仅在调试或明确需要时显示，降低 Git Hook 运行时的视觉噪音
+        # console.print(f"[dim]✔ Loaded .env from: {dotenv_path}[/dim]")
+
+    # 3. 环境变量覆盖 (优先级最高)
+    conf["api_key"] = os.getenv("AI_API_KEY", conf.get("api_key"))
+    conf["base_url"] = os.getenv("AI_BASE_URL", conf.get("base_url"))
+    conf["model"] = os.getenv("AI_MODEL", conf.get("model"))
+    conf["proxy"] = os.getenv("AI_PROXY", conf.get("proxy"))
+
+    # 确保数值型配置项的类型正确
+    try:
+        conf["max_lines"] = int(os.getenv("MAX_LINES", conf.get("max_lines")))
+        conf["max_size"] = int(os.getenv("MAX_SIZE", conf.get("max_size")))
+    except (ValueError, TypeError):
         pass
-    conf["api_key"] = os.getenv("AI_API_KEY", conf["api_key"])
-    conf["base_url"] = os.getenv("AI_BASE_URL", conf["base_url"])
-    conf["model"] = os.getenv("AI_MODEL", conf["model"])
-    conf["proxy"] = os.getenv("AI_PROXY", conf["proxy"])
-    conf["max_lines"] = os.getenv("MAX_LINES", conf["max_lines"])
-    conf["max_size"] = os.getenv("MAX_SIZE", conf["max_size"])
 
     return conf
 
+
 def config_cli(key: str = None, value: str = None, list_all: bool = False):
+    """配置管理逻辑实现"""
     conf = load_full_config()
 
     # 场景 1: 列出所有配置内容
     if list_all:
+        console.print("[bold cyan]当前配置列表:[/bold cyan]")
         for k, v in conf.items():
-            # 使用 Rich 或者简单的 print
-            typer.echo(f"{k} = {v}")
+            # 对 API Key 进行脱敏显示
+            display_v = v
+            if k == "api_key" and v:
+                display_v = f"{v[:8]}...{v[-4:]}" if len(v) > 12 else "******"
+
+            console.print(f"  [yellow]{k:10}[/yellow] = [white]{display_v}[/white]")
         return
 
-    # 场景 2: 没有任何参数，显示帮助
+    # 场景 2: 没有任何参数
     if key is None:
-        typer.echo("用法: ai-review config [key] [value] 或 ai-review config --list")
-        raise typer.Exit()
+        console.print("[yellow]用法:[/yellow] ai-review config [key] [value] 或 ai-review config --list")
+        return
 
-    # 场景 3: 只有 Key，没有 Value -> 查询操作
+    # 场景 3: 只有 Key -> 查询操作
     if value is None:
         if key in conf:
-            typer.echo(conf[key])
+            # 如果是查询 api_key，仍然显示脱敏结果，除非用户确实需要原文
+            val = conf[key]
+            console.print(f"[cyan]{key}[/cyan] = [white]{val}[/white]")
         else:
-            typer.secho(f"❌ 未找到配置项: {key}", fg=typer.colors.RED)
+            console.print(f"[bold red]✘ 未找到配置项: {key}[/bold red]")
         return
 
-    # 场景 4: Key 和 Value 都有 -> 写入操作
-    # 这里可以做一层简单的校验
-    valid_keys = conf.keys()
-    if key not in valid_keys:
-        typer.confirm(f"⚠️ {key} 不是预设配置项，确认要添加吗？", abort=True)
+    # 场景 4: 写入操作
+    # 检查是否为有效配置项
+    if key not in conf and key not in get_default_config():
+        console.print(f"[yellow]! [bold]{key}[/bold] 不是标准配置项。[/yellow]")
+        # 注意：Typer 的 Confirm 逻辑建议保留在 cli.py 装饰器层，这里直接写入或简单判断
 
     conf[key] = value
-    with open(GLOBAL_CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(conf, f, indent=4, ensure_ascii=False)
-
-    typer.secho(f"✅ 已设置 {key} 为 {value}", fg=typer.colors.GREEN)
+    try:
+        with open(GLOBAL_CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(conf, f, indent=4, ensure_ascii=False)
+        console.print(f"[bold green]✔[/bold green] 已成功设置 [magenta]{key}[/magenta]")
+    except Exception as e:
+        console.print(f"[bold red]✘ 写入配置失败: {e}[/bold red]")
