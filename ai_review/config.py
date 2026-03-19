@@ -13,6 +13,7 @@ def get_default_config():
         "api_key": "",
         "base_url": "https://api.deepseek.com",
         "model": "deepseek-chat",
+        "proxy": "",
         "max_lines": 500,  # 限制 diff 行数，防止浪费 token
         "max_size": 100 # 限制文件大小，单位 KB
     }
@@ -48,6 +49,7 @@ def load_full_config():
     conf["api_key"] = os.getenv("AI_API_KEY", conf["api_key"])
     conf["base_url"] = os.getenv("AI_BASE_URL", conf["base_url"])
     conf["model"] = os.getenv("AI_MODEL", conf["model"])
+    conf["proxy"] = os.getenv("AI_PROXY", conf["proxy"])
     conf["max_lines"] = os.getenv("MAX_LINES", conf["max_lines"])
     conf["max_size"] = os.getenv("MAX_SIZE", conf["max_size"])
 

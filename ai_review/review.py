@@ -1,4 +1,5 @@
 import sys
+import httpx
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -29,10 +30,18 @@ def review_code():
         console.print("[yellow]分段中未发现需要评审的文本变更，跳过。[/yellow]")
         return
 
+    # 加入代理配置
+    proxy_url = config.get("proxy")
+    if proxy_url:
+        http_client = httpx.Client(proxy=proxy_url)
+        console.print(f"[dim]🌐 使用代理: {proxy_url}[/dim]")
+    else:
+        http_client = None
     # 3. 初始化 OpenAI 客户端
     client = OpenAI(
         api_key=api_key,
-        base_url=config.get("base_url", "https://api.deepseek.com")
+        base_url=config.get("base_url", "https://api.deepseek.com"),
+        http_client=http_client
     )
 
     # 4. 调用 AI 进行评审
