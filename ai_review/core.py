@@ -28,7 +28,7 @@ def get_clean_diff(max_filesize_kb: int = 100):
             ":!*.lock"
         ]
 
-        result = subprocess.run(stats_cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(stats_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
         lines = result.stdout.strip().splitlines()
 
         if not lines:
@@ -66,12 +66,13 @@ def get_clean_diff(max_filesize_kb: int = 100):
         # 2. 提取最终的文本差异
         # 使用 --unified=3 (默认) 保留上下文，方便 AI 理解代码逻辑
         diff_cmd = ["git", "diff", "HEAD~1", "HEAD", "--"] + valid_files
-        final_diff = subprocess.run(diff_cmd, capture_output=True, text=True, check=True)
+        final_diff = subprocess.run(diff_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
 
         return final_diff.stdout
 
     except subprocess.CalledProcessError as e:
-        return f"❌ Git 命令执行失败: {e.stderr}"
+        stderr_msg = e.stderr.decode('utf-8', 'replace') if isinstance(e.stderr, bytes) else e.stderr
+        return f"❌ Git 命令执行失败: {stderr_msg}"
     except Exception as e:
         return f"❌ 提取 Diff 时发生未知错误: {str(e)}"
 
