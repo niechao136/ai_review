@@ -10,6 +10,10 @@ def get_clean_diff(max_filesize_kb: int = 100):
     3. 支持忽略特定路径
     """
     try:
+        max_filesize_kb = float(max_filesize_kb)
+    except (ValueError, TypeError):
+        max_filesize_kb = 100.0  # 转换失败时的兜底值
+    try:
         # 1. 获取变更统计 (--numstat)
         # 输出格式：增加行数  删除行数  文件路径
         # 对于二进制文件，增加/删除行数会显示为 "-"
