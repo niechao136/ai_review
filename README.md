@@ -1,8 +1,5 @@
 # 🤖 AI Code Reviewer
 
-[](https://www.python.org/)
-[](https://www.google.com/search?q=LICENSE)
-
 **AI Code Reviewer** 是一个基于 Git Hook 的智能代码评审工具。它能在你执行 `git push` 前，自动提取代码变更并调用大模型（如 DeepSeek, GPT-4）进行深度逻辑评审。如果发现严重漏洞，它将化身“硬核架构师”拦截你的提交。
 
 ## ✨ 特性
@@ -36,6 +33,9 @@ ai-review config base_url https://api.deepseek.com
 
 # 设置使用的模型
 ai-review config model deepseek-chat
+
+# [可选] 设置网络代理 (如需访问 Google Gemini 或 OpenAI)
+ai-review config proxy http://127.0.0.1:1080
 ```
 
 ### 3\. 项目注入
