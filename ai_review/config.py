@@ -16,9 +16,7 @@ def get_default_config():
         "api_key": "",
         "base_url": "",
         "model": "",
-        "proxy": "",
-        "max_lines": 500,
-        "max_size": 100
+        "proxy": ""
     }
 
 
@@ -49,13 +47,6 @@ def load_full_config():
     conf["base_url"] = os.getenv("AI_BASE_URL", conf.get("base_url"))
     conf["model"] = os.getenv("AI_MODEL", conf.get("model"))
     conf["proxy"] = os.getenv("AI_PROXY", conf.get("proxy"))
-
-    # 确保数值型配置项的类型正确
-    try:
-        conf["max_lines"] = int(os.getenv("MAX_LINES", conf.get("max_lines")))
-        conf["max_size"] = int(os.getenv("MAX_SIZE", conf.get("max_size")))
-    except (ValueError, TypeError):
-        pass
 
     return conf
 

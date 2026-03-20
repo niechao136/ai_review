@@ -1,20 +1,13 @@
 import subprocess
-import os
-
-from .utils import console
 
 
-def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
+def get_clean_diff(ref: str = "HEAD"):
     """
     智能提取 Git 变更：
     1. 自动识别并剔除二进制文件（图片、模型、压缩包等）
     2. 自动剔除超过大小限制的文本文件（防止大日志或数据文件）
     3. 支持忽略特定路径
     """
-    try:
-        max_filesize_kb = float(max_filesize_kb)
-    except (ValueError, TypeError):
-        max_filesize_kb = 100.0  # 转换失败时的兜底值
     try:
         # 如果能解析出 ref^，说明有父节点
         subprocess.run(["git", "rev-parse", f"{ref}^"], check=True, capture_output=True)
@@ -50,11 +43,6 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
             return "", True
 
         valid_files = []
-        repo_root = ""
-        try:
-            repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
-        except:
-            console.print("[yellow]无法获取 git repo root，文件大小过滤将无法执行[/yellow]")
         for line in lines:
             parts = line.split('\t')
             if len(parts) < 3:
@@ -67,13 +55,6 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
             # A. 过滤二进制文件 (Git 会将二进制文件的统计记为 "-")
             if added == "-" or deleted == "-":
                 continue
-
-            # B. 过滤超大文本文件 (例如意外提交的 1MB 日志)
-            if repo_root:
-                abs_path = os.path.join(repo_root, file_path)
-                if os.path.exists(abs_path):
-                    if (os.path.getsize(abs_path) / 1024) > max_filesize_kb:
-                        continue
 
             valid_files.append(file_path)
 

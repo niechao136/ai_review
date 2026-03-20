@@ -28,7 +28,7 @@ def review_code(ref: str):
 
     # 2. 获取经过智能过滤的 Diff
     console.print("[bold cyan]>>>[/bold cyan] [cyan]正在提取 Git 变更并进行智能过滤...[/cyan]")
-    diff_content, success = get_clean_diff(ref=ref, max_filesize_kb=config.get("max_size", 100.0))
+    diff_content, success = get_clean_diff(ref=ref)
 
     if not success:
         console.print(f"[red]{diff_content}[/red]")
