@@ -25,9 +25,11 @@ def get_clean_diff(ref: str = "HEAD"):
         # 1. 获取变更统计 (--numstat)
         # 输出格式：增加行数  删除行数  文件路径
         # 对于二进制文件，增加/删除行数会显示为 "-"
+        # 加上 --no-renames 将重命名拆分为：一个文件的删除 和 一个新文件的增加
         stats_cmd = [
             "git", "diff", base_ref, target_ref,
             "--numstat",
+            "--no-renames",
             "--",
             ".",
             ":!node_modules/*",
@@ -62,7 +64,7 @@ def get_clean_diff(ref: str = "HEAD"):
             return "", True
 
         # 2. 提取最终的文本差异
-        diff_cmd = ["git", "diff", base_ref, target_ref, "--"] + valid_files
+        diff_cmd = ["git", "diff", base_ref, target_ref, "--no-renames", "--"] + valid_files
         final_diff = subprocess.run(diff_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
 
         return final_diff.stdout, True
