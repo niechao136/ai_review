@@ -82,3 +82,49 @@ def init_cli():
     except Exception as e:
         console.print(f"[bold red]❌ 写入 Hook 文件失败: {e}[/bold red]")
         sys.exit(1)
+
+
+def remove_cli():
+    """从当前项目的 .git/hooks/pre-push 中移除 ai-review 配置"""
+    git_dir = Path(".git")
+
+    if not git_dir.exists():
+        console.print("[bold red]❌ 错误: 当前目录不是 Git 仓库根目录。[/bold red]")
+        sys.exit(1)
+
+    hook_path = git_dir / "hooks" / "pre-push"
+
+    if not hook_path.exists():
+        console.print("[yellow]⚠️ 未发现 pre-push 钩子文件，无需移除。[/yellow]")
+        return
+
+    existing_content = hook_path.read_text(encoding="utf-8")
+
+    if BEGIN_MARKER in existing_content and END_MARKER in existing_content:
+        pattern = re.compile(f"{re.escape(BEGIN_MARKER)}.*?{re.escape(END_MARKER)}", re.DOTALL)
+        new_content = pattern.sub("\n", existing_content).strip()
+    else:
+        target_feature = "ai-review review"
+
+        if target_feature not in existing_content:
+            console.print("[yellow]⚠️ pre-push 钩子文件中未发现 ai-review 的配置，无需移除。[/yellow]")
+            return
+
+        lines = existing_content.splitlines()
+        new_lines = [line for line in lines if target_feature not in line]
+        new_content = "\n".join(new_lines).strip()
+
+    # 决定是回写还是彻底删除
+    is_empty_script = not new_content or new_content.startswith("#!") and len(new_content.splitlines()) <= 1
+
+    try:
+        if is_empty_script:
+            hook_path.unlink()
+            console.print("[bold green]✅ 已彻底移除不再需要的 pre-push 钩子文件。[/bold green]")
+        else:
+            # 保证文件以一个换行符结尾，符合 POSIX 标准
+            hook_path.write_text(new_content + "\n", encoding="utf-8")
+            console.print("[bold green]✅ 已从 pre-push 中成功剔除 ai-review 模块。[/bold green]")
+        console.print("[dim]已移除 Git Hook。现在，推送代码前将不再触发 AI 自动审阅。[/dim]")
+    except Exception as e:
+        console.print(f"[bold red]❌ 移除失败:[/bold red] {str(e)}")

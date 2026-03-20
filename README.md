@@ -38,23 +38,28 @@ ai-review config model gemini-2.5-flash
 ai-review config proxy http://127.0.0.1:1080
 ```
 
-### 3\. 项目注入
+### 3\. 项目注入与移除
 
-进入你的 Git 项目根目录，启用自动评审：
+进入你的 Git 项目根目录：
 
 ```bash
+# 启用自动评审 (注入 Git Hook)
 ai-review init
+
+# 禁用自动评审 (安全移除 Git Hook)
+ai-review remove
 ```
 
 -----
 
 ## 🛠️ 命令手册
 
-| 命令       | 说明                  | 示例                               |
-|:---------|:--------------------|:---------------------------------|
-| `config` | 管理全局配置              | `ai-review config [key] [value]` |
-| `init`   | 为当前项目安装/更新 Git Hook | `ai-review init`                 |
-| `review` | **核心：** 执行代码评审      | `ai-review review [commit ID]`   |
+| 命令       | 说明                   | 示例                               |
+|:---------|:---------------------|:---------------------------------|
+| `config` | 管理全局配置               | `ai-review config [key] [value]` |
+| `init`   | 为当前项目安装/更新 Git Hook  | `ai-review init`                 |
+| `remove` | 从当前项目移除 Git Hook 配置  | `ai-review remove`               |
+| `review` | **核心：** 执行代码评审       | `ai-review review [commit ID]`   |
 
 ### 🔍 深度使用 `review` 指令
 
@@ -89,6 +94,7 @@ AI 将从以下五个维度审视你的代码：
 ## 💡 开发者贴士
 
   * **跳过评审**：如果你急于推送且确信代码没问题，可以使用 `git push --no-verify` 绕过钩子。
+  * **卸载提示**：如果你打算彻底卸载本工具，请务必先运行 `ai-review remove` 以清理 Hook 脚本。
 
 ## 📄 开源协议
 

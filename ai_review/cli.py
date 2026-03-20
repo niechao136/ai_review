@@ -1,7 +1,7 @@
 import typer
 from typing import Optional
 from .config import config_cli
-from .init import init_cli
+from .hook import init_cli, remove_cli
 from .review import review_code
 
 app = typer.Typer()
@@ -10,6 +10,12 @@ app = typer.Typer()
 def init():
     """将 AI 评审钩子注入到当前项目的 .git 文件夹下"""
     init_cli()
+
+
+@app.command()
+def remove():
+    """将 AI 评审钩子从当前项目移除"""
+    remove_cli()
 
 
 @app.command()
