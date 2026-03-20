@@ -33,14 +33,14 @@ def load_full_config():
                 user_config = json.load(f)
                 conf.update(user_config)
         except Exception as e:
-            console.print(f"[yellow]! 读取配置文件失败: {e}[/yellow]")
+            console.print(f"[yellow]⚠️ 读取配置文件失败: {e}[/yellow]")
 
     # 2. 从项目 .env 加载 (作为项目级覆盖)
     dotenv_path = Path.cwd() / ".env"
     if dotenv_path.exists():
         load_dotenv(dotenv_path=dotenv_path, override=True)
         # 仅在调试或明确需要时显示，降低 Git Hook 运行时的视觉噪音
-        # console.print(f"[dim]✔ Loaded .env from: {dotenv_path}[/dim]")
+        # console.print(f"[dim]✅ Loaded .env from: {dotenv_path}[/dim]")
 
     # 3. 环境变量覆盖 (优先级最高)
     conf["api_key"] = os.getenv("AI_API_KEY", conf.get("api_key"))
@@ -81,19 +81,19 @@ def config_cli(key: str = None, value: str = None, list_all: bool = False):
                 display_v = f"{conf[key][:8]}...{conf[key][-4:]}" if len(conf[key]) > 12 else "******"
             console.print(f"[cyan]{key}[/cyan] = [white]{display_v}[/white]")
         else:
-            console.print(f"[bold red]✘ 未找到配置项: {key}[/bold red]")
+            console.print(f"[bold red]❌ 未找到配置项: {key}[/bold red]")
         return
 
     # 场景 4: 写入操作
     # 检查是否为有效配置项
     if key not in conf and key not in get_default_config():
-        console.print(f"[yellow]! [bold]{key}[/bold] 不是标准配置项。[/yellow]")
+        console.print(f"[yellow]⚠️ [bold]{key}[/bold] 不是标准配置项。[/yellow]")
         return
 
     conf[key] = value
     try:
         with open(GLOBAL_CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(conf, f, indent=4, ensure_ascii=False)
-        console.print(f"[bold green]✔[/bold green] 已成功设置 [magenta]{key}[/magenta]")
+        console.print(f"[bold green]✅ 已成功设置 [magenta]{key}[/magenta][/bold green]")
     except Exception as e:
-        console.print(f"[bold red]✘ 写入配置失败: {e}[/bold red]")
+        console.print(f"[bold red]❌ 写入配置失败: {e}[/bold red]")

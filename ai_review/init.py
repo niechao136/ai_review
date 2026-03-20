@@ -27,7 +27,7 @@ def init_cli():
     git_dir = Path(".git")
 
     if not git_dir.exists():
-        console.print("[bold red]✘ 错误: 当前目录不是 Git 仓库根目录。[/bold red]")
+        console.print("[bold red]❌ 错误: 当前目录不是 Git 仓库根目录。[/bold red]")
         sys.exit(1)
 
     hook_path = git_dir / "hooks" / "pre-push"
@@ -47,11 +47,11 @@ def init_cli():
             hook_path.rename(backup_path)
             console.print(f"[dim]已为现有的 pre-push 创建备份: {backup_path}[/dim]")
         except PermissionError:
-            console.print("[bold red]✘ 权限不足: 无法备份或修改 Git Hook。[/bold red]")
+            console.print("[bold red]❌ 权限不足: 无法备份或修改 Git Hook。[/bold red]")
             console.print("[yellow]提示: 请尝试以管理员身份运行，或手动检查 .git/hooks 权限。[/yellow]")
             sys.exit(1)
         except Exception as e:
-            console.print(f"[yellow]! 备份失败 ({e})，为安全起见停止自动注入。[/yellow]")
+            console.print(f"[yellow]⚠️ 备份失败 ({e})，为安全起见停止自动注入。[/yellow]")
             sys.exit(1)
 
     # 逻辑优化：判断是否需要注入或更新
@@ -76,9 +76,9 @@ def init_cli():
         if os.name != 'nt':
             os.chmod(hook_path, 0o755)
 
-        console.print("[bold green]✔ Git Hook 注入/更新成功！[/bold green]")
+        console.print("[bold green]✅ Git Hook 注入/更新成功！[/bold green]")
         console.print("[dim]现在，每次执行 `git push` 前，AI 将自动审阅你的代码。[/dim]")
 
     except Exception as e:
-        console.print(f"[bold red]✘ 写入 Hook 文件失败: {e}[/bold red]")
+        console.print(f"[bold red]❌ 写入 Hook 文件失败: {e}[/bold red]")
         sys.exit(1)

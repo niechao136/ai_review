@@ -1,11 +1,11 @@
 # 🤖 AI Code Reviewer
 
-**AI Code Reviewer** 是一个基于 Git Hook 的智能代码评审工具。它能在你执行 `git push` 前，自动提取代码变更并调用大模型（如 DeepSeek, GPT-4）进行深度逻辑评审。如果发现严重漏洞，它将化身“硬核架构师”拦截你的提交。
+**AI Code Reviewer** 是一个基于 Git Hook 的智能代码评审工具。它能在你执行 `git push` 前，自动提取代码变更并调用大模型（如 Gemini, DeepSeek, GPT-4）进行深度逻辑评审。如果发现严重漏洞，它将拦截你的提交。
 
 ## ✨ 特性
 
   * **智能过滤**：自动识别并跳过二进制文件（图片、模型、压缩包），节省 Token。
-  * **架构师级评审**：不仅看语法，更关注逻辑错误、安全隐患、性能瓶颈及代码整洁度。
+  * **正向/历史评审**：既能拦截 `push` 前的变更，也能针对特定的历史 `commit` 进行复盘。
   * **Git 原生集成**：一键注入 `pre-push` 钩子，无缝嵌入现有开发流。
   * **灵活配置**：类似 `git config` 的操作体验，支持自定义 API Base URL 和模型。
   * **流式输出**：评审建议逐字弹出，拒绝盲目等待。
@@ -22,17 +22,17 @@ pip install git+https://github.com/niechao136/ai_review.git
 
 ### 2\. 初始化配置
 
-设置你的 API Key 和模型信息（配置将加密存储在 `~/.ai_reviewer.json`）：
+设置你的 API 信息（配置存储在 `~/.ai_review.json`）：
 
 ```bash
-# 设置 API Key (输入时会隐藏)
-ai-review config api_key sk-xxxxxx
+# 设置 API Key
+ai-review config api_key your-secret-key
 
-# 设置 API 代理地址 (默认为 DeepSeek)
-ai-review config base_url https://api.deepseek.com
+# 设置 API 代理地址 (支持 OpenAI 格式接口)
+ai-review config base_url https://generativelanguage.googleapis.com/v1beta/openai/
 
 # 设置使用的模型
-ai-review config model deepseek-chat
+ai-review config model gemini-2.5-flash
 
 # [可选] 设置网络代理 (如需访问 Google Gemini 或 OpenAI)
 ai-review config proxy http://127.0.0.1:1080
@@ -46,15 +46,35 @@ ai-review config proxy http://127.0.0.1:1080
 ai-review init
 ```
 
-此操作会在 `.git/hooks/pre-push` 中添加调用指令。
+-----
 
 ## 🛠️ 命令手册
 
-| 命令       | 说明               | 示例                              |
-|:---------|:-----------------|:--------------------------------|
-| `config` | 管理全局配置           | `ai-review config model gpt-4o` |
-| `init`   | 为当前项目安装 Git Hook | `ai-review init`                |
-| `review` | 手动触发代码评审         | `ai-review review`              |
+| 命令       | 说明                  | 示例                               |
+|:---------|:--------------------|:---------------------------------|
+| `config` | 管理全局配置              | `ai-review config [key] [value]` |
+| `init`   | 为当前项目安装/更新 Git Hook | `ai-review init`                 |
+| `review` | **核心：** 执行代码评审      | `ai-review review [commit ID]`   |
+
+### 🔍 深度使用 `review` 指令
+
+`review` 命令非常灵活，支持以下两种场景：
+
+1. **自动拦截 (Git Hook)**：
+    当你执行 `git push` 时，系统会自动提取 **本地最后一次提交 (HEAD)** 的变更进行评审。若该提交被 AI 拦截，推送将被中止。
+    *注：若一次推送多个 commit，目前版本仅审计最顶层的 commit。*
+
+2. **评审历史特定提交 (复盘)**：
+    你可以针对某个特定的 `commit ID` 进行评审：
+
+    ```bash
+    # 评审指定提交的变更
+    ai-review review 9852a8ce
+    ```
+
+    *注：评审指定提交时，系统会自动对比该提交及其父节点 (`ref^`) 的差异。*
+
+-----
 
 ## 🔍 评审维度
 
@@ -69,12 +89,6 @@ AI 将从以下五个维度审视你的代码：
 ## 💡 开发者贴士
 
   * **跳过评审**：如果你急于推送且确信代码没问题，可以使用 `git push --no-verify` 绕过钩子。
-  * **本地调试**：如果你想修改源码，建议使用可编辑模式安装：
-    ```bash
-    git clone https://github.com/niechao136/ai_review.git
-    cd ai_review
-    pip install -e .
-    ```
 
 ## 📄 开源协议
 

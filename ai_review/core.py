@@ -69,6 +69,6 @@ def get_clean_diff(ref: str = "HEAD"):
 
     except subprocess.CalledProcessError as e:
         stderr_msg = e.stderr.decode('utf-8', 'replace') if isinstance(e.stderr, bytes) else e.stderr
-        return f"[bold red]✘[/bold red] Git 命令执行失败: {stderr_msg}", False
+        return f"[bold red]❌ Git 命令执行失败: {stderr_msg}[/bold red]", False
     except Exception as e:
-        return f"[bold red]✘[/bold red] 提取 Diff 时发生未知错误: {str(e)}", False
+        return f"[bold red]❌ 提取 Diff 时发生未知错误: {str(e)}[/bold red]", False

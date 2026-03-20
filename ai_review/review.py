@@ -19,15 +19,15 @@ def review_code(ref: str):
     model = config.get("model")
 
     if not base_url:
-        console.print("[red]✘ 错误: 未配置 Base Url。请运行 `ai-review config base_url <your_url>`[/red]")
+        console.print("[red]❌ 错误: 未配置 Base Url。请运行 `ai-review config base_url <your_url>`[/red]")
         sys.exit(1)
 
     if not model:
-        console.print("[red]✘ 错误: 未配置 Model。请运行 `ai-review config model <your_model>`[/red]")
+        console.print("[red]❌ 错误: 未配置 Model。请运行 `ai-review config model <your_model>`[/red]")
         sys.exit(1)
 
     # 2. 获取经过智能过滤的 Diff
-    console.print("[bold cyan]>>>[/bold cyan] [cyan]正在提取 Git 变更并进行智能过滤...[/cyan]")
+    console.print("[cyan]🔍 正在提取 Git 变更并进行智能过滤...[/cyan]")
     diff_content, success = get_clean_diff(ref=ref)
 
     if not success:
@@ -42,7 +42,7 @@ def review_code(ref: str):
     proxy_url = config.get("proxy")
     if proxy_url:
         http_client = httpx.Client(proxy=proxy_url)
-        console.print(f"[dim]-> 使用代理: {proxy_url}[/dim]")
+        console.print(f"[dim]🌐 使用代理: {proxy_url}[/dim]")
     else:
         http_client = None
     # 3. 初始化 OpenAI 客户端
@@ -86,15 +86,15 @@ def review_code(ref: str):
         last_lines = full_response.strip().splitlines()[-3:]
         decision_text = "".join(last_lines).upper()
         if "[DECISION: BLOCK]" in decision_text:
-            console.print("\n[bold red]✘ Git Push 已拦截：AI 评估认为当前变更存在严重隐患。[/bold red]")
+            console.print("\n[bold red]🚫 Git Push 已拦截：AI 评估认为当前变更存在严重隐患。[/bold red]")
             # 强制退出，返回非零状态码，Git 会停止 push
             sys.exit(1)
         elif "[DECISION: PASS]" in decision_text:
-            console.print("\n[bold green]✔ AI 评审通过，准予推送。[/bold green]")
+            console.print("\n[bold green]✨ AI 评审通过，准予推送。[/bold green]")
         else:
             # 兜底逻辑：如果 AI 没按格式说话，默认允许通过，但给个警告
-            console.print("\n[yellow]! 提示：AI 未给出明确的拦截指令，请自行判断。[/yellow]")
+            console.print("\n[yellow]⚠️ 提示：AI 未给出明确的拦截指令，请自行判断。[/yellow]")
 
     except Exception as e:
-        console.print(f"[red]✘ AI 调用失败: {e}[/red]")
+        console.print(f"[red]❌ AI 调用失败: {e}[/red]")
         sys.exit(1)

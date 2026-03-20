@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-code-reviewer"
-version = "0.1.13"
+version = "0.1.14"
 dependencies = [
     "typer >= 0.9.0",
     "rich >= 13.0.0",
