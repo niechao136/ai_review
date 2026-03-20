@@ -45,7 +45,7 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
         lines = result.stdout.strip().splitlines()
 
         if not lines:
-            return ""
+            return "", True
 
         valid_files = []
         for line in lines:
@@ -61,20 +61,21 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
             if added == "-" or deleted == "-":
                 continue
 
-            # B. 过滤已删除的文件 (评审逻辑通常只关注新增/修改)
-            if not os.path.exists(file_path):
-                continue
-
-            # C. 过滤超大文本文件 (例如意外提交的 1MB 日志)
-            file_size_kb = os.path.getsize(file_path) / 1024
-            if file_size_kb > max_filesize_kb:
-                # 可以在终端打印一行提示，让用户知道这个文件被跳过了
-                continue
+            # B. 过滤超大文本文件 (例如意外提交的 1MB 日志)
+            try:
+                # 获取仓库根目录
+                repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+                abs_path = os.path.join(repo_root, file_path)
+                if os.path.exists(abs_path):
+                    if (os.path.getsize(abs_path) / 1024) > max_filesize_kb:
+                        continue
+            except:
+                pass  # 如果文件在磁盘找不到（比如该 commit 删除了它），就不查大小，直接加入 valid_files
 
             valid_files.append(file_path)
 
         if not valid_files:
-            return ""
+            return "", True
 
         # 2. 提取最终的文本差异
         diff_cmd = ["git", "diff", base_ref, target_ref, "--"] + valid_files
