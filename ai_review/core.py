@@ -1,6 +1,8 @@
 import subprocess
 import os
 
+from .utils import console
+
 
 def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
     """
@@ -48,6 +50,11 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
             return "", True
 
         valid_files = []
+        repo_root = ""
+        try:
+            repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+        except:
+            console.print("[yellow]无法获取 git repo root，文件大小过滤将无法执行[/yellow]")
         for line in lines:
             parts = line.split('\t')
             if len(parts) < 3:
@@ -62,15 +69,11 @@ def get_clean_diff(ref: str = "HEAD", max_filesize_kb: float = 100.0):
                 continue
 
             # B. 过滤超大文本文件 (例如意外提交的 1MB 日志)
-            try:
-                # 获取仓库根目录
-                repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+            if repo_root:
                 abs_path = os.path.join(repo_root, file_path)
                 if os.path.exists(abs_path):
                     if (os.path.getsize(abs_path) / 1024) > max_filesize_kb:
                         continue
-            except:
-                pass  # 如果文件在磁盘找不到（比如该 commit 删除了它），就不查大小，直接加入 valid_files
 
             valid_files.append(file_path)
 
