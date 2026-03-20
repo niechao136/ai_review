@@ -13,26 +13,36 @@ app = typer.Typer()
 def init(
     hook: HookType = typer.Argument(
         HookType.PRE_PUSH,
-        help="指定挂载的 Git Hook 类型 (pre-push 或 pre-commit)"
+        help="指定挂载的 Git Hook 类型 (pre-push 或 pre-commit 或 all)"
     )
 ):
     """
-    安装：将 AI 评审逻辑注入到本地 Git 钩子中。默认安装为 pre-push，也可通过参数设置为 pre-commit。
+    安装：将 AI 评审逻辑注入到本地 Git 钩子中。默认为 pre-push，也可通过参数设置为 pre-commit 或 all。
     """
-    init_cli(hook=hook)
+    if hook == HookType.ALL:
+        tasks = [item for item in HookType if item != HookType.ALL]
+    else:
+        tasks = [hook]
+    for task in tasks:
+        init_cli(hook=task)
 
 
 @app.command()
 def remove(
     hook: HookType = typer.Argument(
         HookType.PRE_PUSH,
-        help="指定需要卸载的 Git Hook 类型"
+        help="指定需要卸载的 Git Hook 类型 (pre-push 或 pre-commit 或 all)"
     )
 ):
     """
-    卸载：从当前项目移除指定的 AI 评审钩子配置。默认移除 pre-push，也可通过参数设置为 pre-commit。
+    卸载：从当前项目移除指定的 AI 评审钩子配置。默认为 pre-push，也可通过参数设置为 pre-commit 或 all。
     """
-    remove_cli(hook=hook)
+    if hook == HookType.ALL:
+        tasks = [item for item in HookType if item != HookType.ALL]
+    else:
+        tasks = [hook]
+    for task in tasks:
+        remove_cli(hook=task)
 
 
 @app.command(name="config")

@@ -10,9 +10,10 @@ from ai_review.utils import console
 # --- 核心配置枚举与映射 ---
 
 class HookType(str, Enum):
-    """Git 钩子类型枚举：目前支持提交前 (pre-commit) 和 推送前 (pre-push)"""
+    """Git 钩子类型枚举：目前支持提交前 (pre-commit) 、 推送前 (pre-push) 以及全部"""
     PRE_PUSH = "pre-push"
     PRE_COMMIT = "pre-commit"
+    ALL = "all"
 
 # 不同钩子对应的 Git 操作名称映射，用于 UI 提示
 HOOK_ACTION_MAP = {

@@ -103,12 +103,12 @@ def review_code(ref: str = "HEAD", is_staged: bool = False):
         decision_text = "".join(last_lines).upper()
 
         if "[DECISION: BLOCK]" in decision_text:
-            # 发现严重隐患，返回非零状态码，这将阻止 git push 或 git commit 的继续执行
+            # 发现严重隐患，返回非零状态码，这将阻止 git 命令的继续执行
             console.print("\n[bold red]🚫 AI 评审未通过：AI 评估认为当前变更存在严重隐患。[/bold red]")
             sys.exit(1)
         elif "[DECISION: PASS]" in decision_text:
             # 评审通过，允许 Git 操作继续
-            console.print("\n[bold green]✨ AI 评审通过，准予推送。[/bold green]")
+            console.print("\n[bold green]✨ AI 评审通过：代码质量达标，准予继续后续操作。[/bold green]")
         else:
             # 如果 AI 未遵循预定义格式给出决策，默认不拦截但给予风险提示
             console.print("\n[yellow]⚠️ 提示：AI 未给出明确的拦截指令，请自行判断。[/yellow]")

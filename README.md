@@ -43,16 +43,16 @@ ai-review config proxy http://127.0.0.1:1080
 进入你的 Git 项目根目录：
 
 ```bash
-# 启用自动评审 (默认注入 pre-push 钩子)
+# 默认注入 pre-push
 ai-review init
 
-# [可选] 在 commit 阶段提前拦截
+# 全方位守护：同时注入 commit 和 push 拦截
+ai-review init all
+
+# [可选] 指定注入 pre-commit
 ai-review init pre-commit
 
-# 禁用自动评审 (默认移除 pre-push 钩子)
-ai-review remove
-
-# 移除 pre-commit 钩子
+# 移除指定钩子，参数与 init 命令相同
 ai-review remove pre-commit
 ```
 
@@ -108,7 +108,7 @@ AI 将从以下五个维度审视你的代码：
 ## 💡 开发者贴士
 
   * **跳过评审**：如果你急于推送且确信代码没问题，可以使用 `git push --no-verify` 绕过钩子。
-  * **卸载提示**：如果你打算彻底卸载本工具，请务必先运行 `ai-review remove` 以清理 Hook 脚本。
+  * **卸载提示**：如果你打算彻底卸载本工具，可以运行 `ai-review remove` 以清理 Hook 脚本。
 
 ## 📄 开源协议
 
