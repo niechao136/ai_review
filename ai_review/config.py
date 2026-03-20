@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
+from rich.markup import escape
 
-from ai_review.utils import console
+from .utils import console
 
 # 全局配置文件路径：存储于用户 home 目录下的隐藏 JSON 文件
 GLOBAL_CONFIG_PATH = Path.home() / ".ai_review.json"
@@ -43,7 +44,7 @@ def load_full_config() -> dict:
                 user_config = json.load(f)
                 conf.update(user_config)
         except Exception as e:
-            console.print(f"[yellow]⚠️ 读取配置文件失败: {e}[/yellow]")
+            console.print(f"[yellow]⚠️ 读取配置文件失败: {escape(str(e))}[/yellow]")
 
     # 2. 加载当前工作目录下的项目级配置 (.env)
     dotenv_path = Path.cwd() / ".env"
@@ -112,4 +113,4 @@ def config_cli(key: Optional[str] = None, value: Optional[str] = None, list_all:
             json.dump(conf, f, indent=4, ensure_ascii=False)
         console.print(f"[bold green]✅ 已成功设置 [magenta]{key}[/magenta][/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ 写入配置失败: {e}[/bold red]")
+        console.print(f"[bold red]❌ 写入配置失败: {escape(str(e))}[/bold red]")

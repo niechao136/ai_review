@@ -1,5 +1,7 @@
 import subprocess
 
+from rich.markup import escape
+
 
 def get_diff_range(ref: str = "HEAD", is_staged: bool = False):
     """
@@ -102,4 +104,4 @@ def get_clean_diff(ref: str = "HEAD", is_staged: bool = False):
         return f"[bold red]❌ Git 命令执行失败: {stderr_msg}[/bold red]", False
     except Exception as e:
         # 捕获逻辑执行中的其他未知异常
-        return f"[bold red]❌ 提取 Diff 时发生未知错误: {str(e)}[/bold red]", False
+        return f"[bold red]❌ 提取 Diff 时发生未知错误: {escape(str(e))}[/bold red]", False

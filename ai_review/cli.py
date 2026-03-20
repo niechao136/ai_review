@@ -4,7 +4,7 @@ from typing import Optional
 from .config import config_cli
 from .hook import init_cli, remove_cli, HookType
 from .review import review_code
-from utils import console
+from .utils import console
 
 app = typer.Typer()
 

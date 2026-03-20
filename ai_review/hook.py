@@ -3,6 +3,7 @@ import re
 import sys
 from enum import Enum
 from pathlib import Path
+from rich.markup import escape
 
 from ai_review.utils import console
 
@@ -80,7 +81,7 @@ def init_cli(hook: HookType = HookType.PRE_PUSH):
             console.print("[bold red]❌ 权限不足: 无法备份或修改 Git Hook。[/bold red]")
             sys.exit(1)
         except Exception as e:
-            console.print(f"[yellow]⚠️ 备份失败 ({e})，为安全起见停止自动注入。[/yellow]")
+            console.print(f"[yellow]⚠️ 备份失败 ({escape(str(e))})，为安全起见停止自动注入。[/yellow]")
             sys.exit(1)
 
     # 4. 内容合成逻辑：支持增量更新旧有的标记块
@@ -111,7 +112,7 @@ def init_cli(hook: HookType = HookType.PRE_PUSH):
         console.print(f"[dim]现在，每次执行 `git {action}` 前，AI 将自动审阅你的代码。[/dim]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ 写入 Hook 文件失败: {e}[/bold red]")
+        console.print(f"[bold red]❌ 写入 Hook 文件失败: {escape(str(e))}[/bold red]")
         sys.exit(1)
 
 
@@ -164,4 +165,4 @@ def remove_cli(hook: HookType = HookType.PRE_PUSH):
             console.print(f"[bold green]✅ 已从 {hook.value} 中成功剔除 ai-review 模块。[/bold green]")
         console.print("[dim]已移除 Git Hook。现在，操作代码前将不再触发 AI 自动审阅。[/dim]")
     except Exception as e:
-        console.print(f"[bold red]❌ 移除失败:[/bold red] {str(e)}")
+        console.print(f"[bold red]❌ 移除失败:[/bold red] {escape(str(e))}")

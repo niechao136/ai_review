@@ -4,6 +4,7 @@ import httpx
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
+from rich.markup import escape
 
 from .config import load_full_config
 from .core import get_clean_diff
@@ -114,5 +115,5 @@ def review_code(ref: str = "HEAD", is_staged: bool = False):
 
     except Exception as e:
         # 捕获网络、API 调用或权限等异常情况
-        console.print(f"[red]❌ AI 调用失败: {e}[/red]")
+        console.print(f"[red]❌ AI 调用失败: {escape(str(e))}[/red]")
         sys.exit(1)
