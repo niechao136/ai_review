@@ -1,46 +1,69 @@
 import subprocess
 
 
-def get_clean_diff(ref: str = "HEAD"):
+def get_diff_range(ref: str = "HEAD", is_staged: bool = False):
     """
-    智能提取 Git 变更：
-    1. 自动识别并剔除二进制文件（图片、模型、压缩包等）
-    2. 自动剔除超过大小限制的文本文件（防止大日志或数据文件）
-    3. 支持忽略特定路径
-    """
-    try:
-        # 如果能解析出 ref^，说明有父节点
-        subprocess.run(["git", "rev-parse", f"{ref}^"], check=True, capture_output=True)
-        has_parent = True
-    except subprocess.CalledProcessError:
-        has_parent = False
-    if has_parent:
-        base_ref = f"{ref}^"
-    else:
-        # 如果是初始提交，对比“空树” (Magic Hash for empty tree)
-        # 这会让 git diff 列出该提交中的所有文件内容
-        base_ref = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-    target_ref = ref
-    try:
-        # 1. 获取变更统计 (--numstat)
-        # 输出格式：增加行数  删除行数  文件路径
-        # 对于二进制文件，增加/删除行数会显示为 "-"
-        # 加上 --no-renames 将重命名拆分为：一个文件的删除 和 一个新文件的增加
-        stats_cmd = [
-            "git", "diff", base_ref, target_ref,
-            "--numstat",
-            "--no-renames",
-            "--",
-            ".",
-            ":!node_modules/*",
-            ":!venv/*",
-            ":!.env*",
-            ":!*.lock"
-        ]
+    根据用户输入参数确定 Git Diff 的对比范围参数。
 
-        result = subprocess.run(stats_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
+    Args:
+        ref: 指定的提交引用（如 Commit ID、分支名或 Tag）。
+        is_staged: 是否开启暂存区模式。
+
+    Returns:
+        list: 传递给 git diff 命令的范围参数列表。
+    """
+    # 场景 1：如果指定了暂存区模式，直接返回 --cached 参数
+    if is_staged:
+        # 用于对比暂存区与最后一次提交 (HEAD) 之间的差异
+        return ["--cached"]
+
+    # 场景 2：评审指定引用及其父节点之间的变更
+    try:
+        # 尝试通过 rev-parse 检查该引用是否存在父节点（HEAD^）
+        subprocess.run(
+            ["git", "rev-parse", f"{ref}^"],
+            check=True, capture_output=True, text=True
+        )
+        # 存在父节点，返回对比范围：[父节点, 当前节点]
+        return [f"{ref}^", ref]
+    except subprocess.CalledProcessError:
+        # 场景 3：处理初始提交（没有父节点的情况）
+        # 使用 Git 预定义的空目录树 Hash (EMPTY_TREE_HASH) 作为基准进行对比
+        return ["4b825dc642cb6eb9a060e54bf8d69288fbee4904", ref]
+
+
+def get_clean_diff(ref: str = "HEAD", is_staged: bool = False):
+    """
+    提取并过滤 Git 变更内容，仅保留有效的文本文件差异。
+
+    该函数执行两步走策略：
+    1. 使用 --numstat 分析文件变更统计信息，识别并剔除二进制文件。
+    2. 对过滤后的文本文件执行详细的 diff 提取。
+
+    Args:
+        ref: 提交引用。
+        is_staged: 是否评审暂存区。
+
+    Returns:
+        tuple: (diff_text, success_flag) 差异文本内容及执行状态。
+    """
+    try:
+        # 1. 获取对比范围参数（如 ["--cached"] 或 ["HEAD^", "HEAD"]）
+        diff_range = get_diff_range(ref, is_staged)
+
+        # 2. 获取变更统计信息
+        # --numstat 输出：添加行数  删除行数  文件路径
+        # --no-renames 强制将重命名操作拆分为“删除旧文件”和“新增新文件”，便于路径处理
+        stats_cmd = ["git", "diff"] + diff_range + ["--numstat", "--no-renames", "--", ".", ]
+
+        result = subprocess.run(
+            stats_cmd,
+            capture_output=True, text=True, check=True,
+            encoding="utf-8", errors="replace"
+        )
         lines = result.stdout.strip().splitlines()
 
+        # 如果没有任何变更行，返回空字符串
         if not lines:
             return "", True
 
@@ -52,25 +75,31 @@ def get_clean_diff(ref: str = "HEAD"):
 
             added, deleted, file_path = parts[0], parts[1], parts[2]
 
-            # --- 智能过滤逻辑 ---
-
-            # A. 过滤二进制文件 (Git 会将二进制文件的统计记为 "-")
+            # 过滤逻辑：Git 在 numstat 中会将二进制文件的行列统计显示为 "-"
             if added == "-" or deleted == "-":
                 continue
 
             valid_files.append(file_path)
 
+        # 如果过滤后没有可评审的文本文件，直接返回
         if not valid_files:
             return "", True
 
-        # 2. 提取最终的文本差异
-        diff_cmd = ["git", "diff", base_ref, target_ref, "--no-renames", "--"] + valid_files
-        final_diff = subprocess.run(diff_cmd, capture_output=True, text=True, check=True, encoding="utf-8", errors="replace")
+        # 3. 提取最终的详细文本差异内容
+        # 仅针对上一步筛选出的有效文本文件列表 (valid_files) 进行 diff
+        diff_cmd = ["git", "diff"] + diff_range + ["--no-renames", "--"] + valid_files
+        final_diff = subprocess.run(
+            diff_cmd,
+            capture_output=True, text=True, check=True,
+            encoding="utf-8", errors="replace"
+        )
 
         return final_diff.stdout, True
 
     except subprocess.CalledProcessError as e:
+        # 捕获并格式化 Git 命令执行中的标准错误输出
         stderr_msg = e.stderr.decode('utf-8', 'replace') if isinstance(e.stderr, bytes) else e.stderr
         return f"[bold red]❌ Git 命令执行失败: {stderr_msg}[/bold red]", False
     except Exception as e:
+        # 捕获逻辑执行中的其他未知异常
         return f"[bold red]❌ 提取 Diff 时发生未知错误: {str(e)}[/bold red]", False

@@ -43,33 +43,47 @@ ai-review config proxy http://127.0.0.1:1080
 进入你的 Git 项目根目录：
 
 ```bash
-# 启用自动评审 (注入 Git Hook)
+# 启用自动评审 (默认注入 pre-push 钩子)
 ai-review init
 
-# 禁用自动评审 (安全移除 Git Hook)
+# [可选] 在 commit 阶段提前拦截
+ai-review init pre-commit
+
+# 禁用自动评审 (默认移除 pre-push 钩子)
 ai-review remove
+
+# 移除 pre-commit 钩子
+ai-review remove pre-commit
 ```
 
 -----
 
 ## 🛠️ 命令手册
 
-| 命令       | 说明                   | 示例                               |
-|:---------|:---------------------|:---------------------------------|
-| `config` | 管理全局配置               | `ai-review config [key] [value]` |
-| `init`   | 为当前项目安装/更新 Git Hook  | `ai-review init`                 |
-| `remove` | 从当前项目移除 Git Hook 配置  | `ai-review remove`               |
-| `review` | **核心：** 执行代码评审       | `ai-review review [commit ID]`   |
+| 命令       | 说明                  | 示例                               |
+|:---------|:--------------------|:---------------------------------|
+| `config` | 管理全局配置              | `ai-review config [key] [value]` |
+| `init`   | 为当前项目安装/更新 Git Hook | `ai-review init [hook_type]`     |
+| `remove` | 从当前项目移除 Git Hook 配置 | `ai-review remove [hook_type]`   |
+| `review` | **核心：** 执行代码评审      | `ai-review review [commit ID]`   |
 
 ### 🔍 深度使用 `review` 指令
 
-`review` 命令非常灵活，支持以下两种场景：
+`review` 命令非常灵活，支持以下三种场景：
 
 1. **自动拦截 (Git Hook)**：
-    当你执行 `git push` 时，系统会自动提取 **本地最后一次提交 (HEAD)** 的变更进行评审。若该提交被 AI 拦截，推送将被中止。
-    *注：若一次推送多个 commit，目前版本仅审计最顶层的 commit。*
+    - **Push 拦截**：执行 git push 时，评审 HEAD 提交。若被拦截，推送中止。*注：若一次推送多个 commit，目前版本仅审计最顶层的 commit。*
+    - **Commit 拦截**：若安装了 pre-commit 钩子，将在提交前评审 暂存区 (Staged) 代码。
 
-2. **评审历史特定提交 (复盘)**：
+2. **评审暂存区 (手动)**：
+    如果你想在提交前手动检查当前已 git add 的变更：
+
+    ```bash
+    # 评审暂存区
+    ai-review review --staged
+    ```
+
+3. **评审历史特定提交 (复盘)**：
     你可以针对某个特定的 `commit ID` 进行评审：
 
     ```bash
