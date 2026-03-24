@@ -3,7 +3,7 @@ from typing import Optional
 
 from .config import config_cli
 from .hook import get_status, init_cli, remove_cli, HookType
-from .review import review_code
+from .review import review_code, ReviewMode
 from .utils import console
 
 app = typer.Typer()
@@ -74,18 +74,31 @@ def review(
     staged: bool = typer.Option(
         False, "--staged", "-s",
         help="开启暂存区模式：仅评审已 git add 但未 commit 的变更"
+    ),
+    local: bool = typer.Option(
+        False, "--local", "-l",
+        help="开启本地修改模式：仅评审所有未 commit 的变更"
     )
 ):
     """
     评审：手动触发 AI 代码审计。支持指定历史提交或当前暂存区。
     """
-    # 只要用户命令带了 --staged，就会忽略 ref，只对比暂存区的代码变更
     if staged:
+        if local:
+            console.print("[yellow]⚠️  警告: 检测到 --staged 参数，将忽略指定的 --local 参数，转而评审暂存区。[/yellow]")
         if ref != "HEAD":
             console.print("[yellow]⚠️  警告: 检测到 --staged 参数，将忽略指定的引用 '%s'，转而评审暂存区。[/yellow]" % ref)
+        mode = ReviewMode.STAGED
         console.print("[dim]ℹ️  模式：暂存区 (Staged) 增量审计[/dim]")
-        review_code(ref="HEAD", is_staged=True)
+        review_code(ref="HEAD", mode=mode)
+    elif local:
+        if ref != "HEAD":
+            console.print("[yellow]⚠️  警告: 检测到 --local 参数，将忽略指定的引用 '%s'，转而评审本地修改。[/yellow]" % ref)
+        mode = ReviewMode.LOCAL
+        console.print("[dim]ℹ️  模式：本地修改审计[/dim]")
+        review_code(ref="HEAD", mode=mode)
     else:
+        mode = ReviewMode.COMMIT
         mode_desc = "最后一次提交 (HEAD)" if ref == "HEAD" else f"提交节点 {ref}"
         console.print(f"[dim]ℹ️  模式：{mode_desc} 审计[/dim]")
-        review_code(ref=ref, is_staged=False)
+        review_code(ref=ref, mode=mode)

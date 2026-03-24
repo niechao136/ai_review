@@ -2,24 +2,31 @@ import subprocess
 
 from rich.markup import escape
 
+from .review import ReviewMode
 
-def get_diff_range(ref: str = "HEAD", is_staged: bool = False):
+
+def get_diff_range(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
     """
     根据用户输入参数确定 Git Diff 的对比范围参数。
 
     Args:
         ref: 指定的提交引用（如 Commit ID、分支名或 Tag）。
-        is_staged: 是否开启暂存区模式。
+        mode: 评审代码模式：评审提交、评审暂存区 (Staged)、评审本地修改
 
     Returns:
         list: 传递给 git diff 命令的范围参数列表。
     """
     # 场景 1：如果指定了暂存区模式，直接返回 --cached 参数
-    if is_staged:
+    if mode == ReviewMode.STAGED:
         # 用于对比暂存区与最后一次提交 (HEAD) 之间的差异
         return ["--cached"]
 
-    # 场景 2：评审指定引用及其父节点之间的变更
+    # 场景 2：如果指定了本地修改模式，直接返回 HEAD 参数
+    if mode == ReviewMode.LOCAL:
+        # 用于对比本地修改与最后一次提交 (HEAD) 之间的差异，无论是否 git add
+        return ["HEAD"]
+
+    # 场景 3：评审指定引用及其父节点之间的变更
     try:
         # 尝试通过 rev-parse 检查该引用是否存在父节点（HEAD^）
         subprocess.run(
@@ -34,7 +41,7 @@ def get_diff_range(ref: str = "HEAD", is_staged: bool = False):
         return ["4b825dc642cb6eb9a060e54bf8d69288fbee4904", ref]
 
 
-def get_clean_diff(ref: str = "HEAD", is_staged: bool = False):
+def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
     """
     提取并过滤 Git 变更内容，仅保留有效的文本文件差异。
 
@@ -44,14 +51,14 @@ def get_clean_diff(ref: str = "HEAD", is_staged: bool = False):
 
     Args:
         ref: 提交引用。
-        is_staged: 是否评审暂存区。
+        mode: 评审代码模式：评审提交、评审暂存区 (Staged)、评审本地修改
 
     Returns:
         tuple: (diff_text, success_flag) 差异文本内容及执行状态。
     """
     try:
         # 1. 获取对比范围参数（如 ["--cached"] 或 ["HEAD^", "HEAD"]）
-        diff_range = get_diff_range(ref, is_staged)
+        diff_range = get_diff_range(ref=ref, mode=mode)
 
         # 2. 获取变更统计信息
         # --numstat 输出：添加行数  删除行数  文件路径

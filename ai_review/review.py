@@ -1,5 +1,6 @@
 import sys
 import httpx
+from enum import Enum
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -12,13 +13,20 @@ from .prompts import SYSTEM_PROMPT
 from .utils import console
 
 
-def review_code(ref: str = "HEAD", is_staged: bool = False):
+class ReviewMode(str, Enum):
+    """评审代码模式枚举：目前支持评审提交、评审暂存区 (Staged)、评审本地修改"""
+    COMMIT = "commit"
+    STAGED = "staged"
+    LOCAL = "local"
+
+
+def review_code(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
     """
     核心评审逻辑：集成配置加载、Diff 提取、AI 调用及决策拦截。
 
     Args:
         ref: Git 引用（提交 ID、分支或 Tag）。
-        is_staged: 是否仅评审暂存区内容。
+        mode: 评审代码模式：评审提交、评审暂存区 (Staged)、评审本地修改
     """
     # 1. 加载配置并进行合法性校验
     config = load_full_config()
@@ -37,7 +45,7 @@ def review_code(ref: str = "HEAD", is_staged: bool = False):
 
     # 2. 调用核心模块提取经过过滤的文本 Diff
     console.print("[cyan]🔍 正在提取 Git 变更并进行智能过滤...[/cyan]")
-    diff_content, success = get_clean_diff(ref=ref, is_staged=is_staged)
+    diff_content, success = get_clean_diff(ref=ref, mode=mode)
 
     # 如果 Git 命令执行失败，打印错误并退出
     if not success:
@@ -46,7 +54,7 @@ def review_code(ref: str = "HEAD", is_staged: bool = False):
 
     # 如果没有检测到有效文本变更（如全是二进制文件），则直接跳过评审
     if not diff_content or diff_content.strip() == "":
-        if is_staged:
+        if mode == ReviewMode.STAGED:
             console.print("[yellow]⚠️ 暂存区为空。你是否忘了运行 `git add`？[/yellow]")
         else:
             console.print("[yellow]⚠️ 未发现可评审的变更。[/yellow]")

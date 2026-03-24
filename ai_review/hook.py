@@ -193,11 +193,16 @@ def get_status():
         detail = "-"
 
         if hook_path.exists():
-            content = hook_path.read_text(encoding="utf-8")
-            # 通过特征字符串判断是否由本工具注入
-            if "ai-review review" in content:
-                is_installed = True
-                detail = "已注入 AI 评审逻辑"
+            try:
+                content = hook_path.read_text(encoding="utf-8")
+                # 通过特征字符串判断是否由本工具注入
+                if "ai-review review" in content:
+                    is_installed = True
+                    detail = "已注入 AI 评审逻辑"
+            except Exception as e:
+                detail = f"读取失败: {escape(str(e))}"
+                console.print(f"[yellow]⚠️ 读取文件 {hook_path.name} 失败: {escape(str(e))}[/yellow]")
+
 
         status_str = "[green]● 已启用[/green]" if is_installed else "[red]○ 未启用[/red]"
         table.add_row(str(hook_name), status_str, detail)
