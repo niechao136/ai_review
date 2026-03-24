@@ -1,6 +1,5 @@
 import sys
 import httpx
-from enum import Enum
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -10,14 +9,8 @@ from rich.markup import escape
 from .config import load_full_config
 from .core import get_clean_diff
 from .prompts import SYSTEM_PROMPT
+from .types import ReviewMode
 from .utils import console
-
-
-class ReviewMode(str, Enum):
-    """评审代码模式枚举：目前支持评审提交、评审暂存区 (Staged)、评审本地修改"""
-    COMMIT = "commit"
-    STAGED = "staged"
-    LOCAL = "local"
 
 
 def review_code(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):

@@ -2,7 +2,7 @@ import subprocess
 
 from rich.markup import escape
 
-from .review import ReviewMode
+from .types import ReviewMode
 
 
 def get_diff_range(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):

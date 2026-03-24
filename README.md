@@ -83,8 +83,16 @@ ai-review status
     # 评审暂存区
     ai-review review --staged
     ```
+   
+3. **评审本地修改 (手动)**：
+    如果你想手动检查当前所有未提交的变更（无论是否 git add）：
 
-3. **评审历史特定提交 (复盘)**：
+    ```bash
+    # 评审本地修改
+    ai-review review --local
+    ```
+
+4. **评审历史特定提交 (复盘)**：
     你可以针对某个特定的 `commit ID` 进行评审：
 
     ```bash

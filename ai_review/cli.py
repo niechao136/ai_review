@@ -2,8 +2,9 @@ import typer
 from typing import Optional
 
 from .config import config_cli
-from .hook import get_status, init_cli, remove_cli, HookType
-from .review import review_code, ReviewMode
+from .hook import get_status, init_cli, remove_cli
+from .review import review_code
+from .types import HookType, ReviewMode
 from .utils import console
 
 app = typer.Typer()
