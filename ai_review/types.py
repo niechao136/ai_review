@@ -13,3 +13,10 @@ class ReviewMode(str, Enum):
     COMMIT = "commit"
     STAGED = "staged"
     LOCAL = "local"
+
+
+class DiffStatus(str, Enum):
+    """获取 git diff 的状态：目前支持成功、失败、跳过"""
+    SUCCESS = "success"
+    FAILED = "failed"
+    SKIP = "skip"

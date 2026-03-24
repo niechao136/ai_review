@@ -2,7 +2,7 @@ import subprocess
 
 from rich.markup import escape
 
-from .types import ReviewMode
+from .types import ReviewMode, DiffStatus
 
 
 def is_merge_commit(ref: str = "HEAD"):
@@ -54,7 +54,7 @@ def get_diff_range(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
         return ["4b825dc642cb6eb9a060e54bf8d69288fbee4904", ref]
 
 
-def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
+def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT) -> tuple[str, DiffStatus]:
     """
     提取并过滤 Git 变更内容，仅保留有效的文本文件差异。
 
@@ -67,12 +67,12 @@ def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
         mode: 评审代码模式：评审提交、评审暂存区 (Staged)、评审本地修改
 
     Returns:
-        tuple: (diff_text, success_flag) 差异文本内容及执行状态。
+        tuple: (diff_text, flag) 差异文本内容及执行状态。
     """
     try:
         # 检查评审的提交是否是合并提交，如果是则跳过
         if mode == ReviewMode.COMMIT and is_merge_commit(ref=ref):
-            return "[yellow]⚠️ 检测到合并提交，跳过重复评审。[/yellow]", False
+            return "[yellow]⚠️ 检测到合并提交，跳过重复评审。[/yellow]", DiffStatus.SKIP
 
         # 1. 获取对比范围参数（如 ["--cached"] 或 ["HEAD^", "HEAD"]）
         diff_range = get_diff_range(ref=ref, mode=mode)
@@ -88,10 +88,13 @@ def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
             encoding="utf-8", errors="replace"
         )
         lines = result.stdout.strip().splitlines()
+        empty = "[yellow]⚠️ 未发现可评审的变更。[/yellow]"
+        if mode == ReviewMode.STAGED:
+            empty = "[yellow]⚠️ 暂存区为空。你是否忘了运行 `git add`？[/yellow]"
 
         # 如果没有任何变更行，返回空字符串
         if not lines:
-            return "", True
+            return empty, DiffStatus.SKIP
 
         valid_files = []
         for line in lines:
@@ -109,7 +112,7 @@ def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
 
         # 如果过滤后没有可评审的文本文件，直接返回
         if not valid_files:
-            return "", True
+            return empty, DiffStatus.SKIP
 
         # 3. 提取最终的详细文本差异内容
         # 仅针对上一步筛选出的有效文本文件列表 (valid_files) 进行 diff
@@ -119,13 +122,18 @@ def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
             capture_output=True, text=True, check=True,
             encoding="utf-8", errors="replace"
         )
+        diff_content = final_diff.stdout
 
-        return final_diff.stdout, True
+        # 如果没有任何变更行，跳过评审
+        if not diff_content or diff_content.strip() == "":
+            return empty, DiffStatus.SKIP
+
+        return diff_content, DiffStatus.SUCCESS
 
     except subprocess.CalledProcessError as e:
         # 捕获并格式化 Git 命令执行中的标准错误输出
         stderr_msg = e.stderr.decode('utf-8', 'replace') if isinstance(e.stderr, bytes) else e.stderr
-        return f"[bold red]❌ Git 命令执行失败: {stderr_msg}[/bold red]", False
+        return f"[bold red]❌ Git 命令执行失败: {stderr_msg}[/bold red]", DiffStatus.FAILED
     except Exception as e:
         # 捕获逻辑执行中的其他未知异常
-        return f"[bold red]❌ 提取 Diff 时发生未知错误: {escape(str(e))}[/bold red]", False
+        return f"[bold red]❌ 提取 Diff 时发生未知错误: {escape(str(e))}[/bold red]", DiffStatus.FAILED

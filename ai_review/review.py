@@ -10,7 +10,7 @@ from .config import load_full_config
 from .core import get_clean_diff
 from .prompts import SYSTEM_PROMPT
 from .report import ensure_gitignore, save_review_report
-from .types import ReviewMode
+from .types import ReviewMode, DiffStatus
 from .utils import console
 
 
@@ -39,19 +39,16 @@ def review_code(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
 
     # 2. 调用核心模块提取经过过滤的文本 Diff
     console.print("[cyan]🔍 正在提取 Git 变更并进行智能过滤...[/cyan]")
-    diff_content, success = get_clean_diff(ref=ref, mode=mode)
+    diff_content, flag = get_clean_diff(ref=ref, mode=mode)
 
-    # 如果 Git 命令执行失败，打印错误并退出
-    if not success:
+    # get_clean_diff 返回失败，则直接退出
+    if flag == DiffStatus.FAILED:
         console.print(diff_content)
         sys.exit(1)
 
-    # 如果没有检测到有效文本变更（如全是二进制文件），则直接跳过评审
-    if not diff_content or diff_content.strip() == "":
-        if mode == ReviewMode.STAGED:
-            console.print("[yellow]⚠️ 暂存区为空。你是否忘了运行 `git add`？[/yellow]")
-        else:
-            console.print("[yellow]⚠️ 未发现可评审的变更。[/yellow]")
+    # get_clean_diff 返回跳过，则跳过评审
+    if flag == DiffStatus.SKIP:
+        console.print(diff_content)
         return
 
     # 3. 网络代理配置处理
