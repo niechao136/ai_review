@@ -5,6 +5,19 @@ from rich.markup import escape
 from .types import ReviewMode
 
 
+def is_merge_commit(ref: str = "HEAD"):
+    try:
+        # %P 表示显示所有的父节点哈希值（以空格分隔）
+        cmd = ["git", "show", "-s", "--format=%P", ref]
+        output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode().strip()
+
+        # 如果拆分后的列表长度 > 1，说明是 Merge 提交
+        parents = output.split()
+        return len(parents) > 1
+    except Exception:
+        return False
+
+
 def get_diff_range(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
     """
     根据用户输入参数确定 Git Diff 的对比范围参数。
@@ -57,6 +70,10 @@ def get_clean_diff(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
         tuple: (diff_text, success_flag) 差异文本内容及执行状态。
     """
     try:
+        # 检查评审的提交是否是合并提交，如果是则跳过
+        if mode == ReviewMode.COMMIT and is_merge_commit(ref=ref):
+            return "[yellow]⚠️ 检测到合并提交，跳过重复评审。[/yellow]", False
+
         # 1. 获取对比范围参数（如 ["--cached"] 或 ["HEAD^", "HEAD"]）
         diff_range = get_diff_range(ref=ref, mode=mode)
 

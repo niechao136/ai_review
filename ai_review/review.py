@@ -43,7 +43,7 @@ def review_code(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
 
     # 如果 Git 命令执行失败，打印错误并退出
     if not success:
-        console.print(f"[red]{diff_content}[/red]")
+        console.print(diff_content)
         sys.exit(1)
 
     # 如果没有检测到有效文本变更（如全是二进制文件），则直接跳过评审
