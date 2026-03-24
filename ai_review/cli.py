@@ -2,7 +2,7 @@ import typer
 from typing import Optional
 
 from .config import config_cli
-from .hook import init_cli, remove_cli, HookType
+from .hook import get_status, init_cli, remove_cli, HookType
 from .review import review_code
 from .utils import console
 
@@ -43,6 +43,14 @@ def remove(
         tasks = [hook]
     for task in tasks:
         remove_cli(hook=task)
+
+
+@app.command()
+def status():
+    """
+    查看当前项目的 AI 评审钩子安装状态。
+    """
+    get_status()
 
 
 @app.command(name="config")

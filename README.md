@@ -46,26 +46,27 @@ ai-review config proxy http://127.0.0.1:1080
 # 默认注入 pre-push
 ai-review init
 
-# 全方位守护：同时注入 commit 和 push 拦截
-ai-review init all
-
 # [可选] 指定注入 pre-commit
 ai-review init pre-commit
 
 # 移除指定钩子，参数与 init 命令相同
 ai-review remove pre-commit
+
+# 查看当前项目的钩子安装状态
+ai-review status
 ```
 
 -----
 
 ## 🛠️ 命令手册
 
-| 命令       | 说明                  | 示例                               |
-|:---------|:--------------------|:---------------------------------|
-| `config` | 管理全局配置              | `ai-review config [key] [value]` |
-| `init`   | 为当前项目安装/更新 Git Hook | `ai-review init [hook_type]`     |
-| `remove` | 从当前项目移除 Git Hook 配置 | `ai-review remove [hook_type]`   |
-| `review` | **核心：** 执行代码评审      | `ai-review review [commit ID]`   |
+| 命令       | 说明                    | 示例                               |
+|:---------|:----------------------|:---------------------------------|
+| `config` | 管理全局配置                | `ai-review config [key] [value]` |
+| `init`   | 为当前项目安装/更新 Git Hook   | `ai-review init [hook_type]`     |
+| `remove` | 从当前项目移除 Git Hook 配置   | `ai-review remove [hook_type]`   |
+| `status` | 查看当前项目的 Git Hook 安装状态 | `ai-review status`               |
+| `review` | **核心：** 执行代码评审        | `ai-review review [commit ID]`   |
 
 ### 🔍 深度使用 `review` 指令
 

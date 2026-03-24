@@ -46,7 +46,10 @@ def review_code(ref: str = "HEAD", is_staged: bool = False):
 
     # 如果没有检测到有效文本变更（如全是二进制文件），则直接跳过评审
     if not diff_content or diff_content.strip() == "":
-        console.print("[yellow]分段中未发现需要评审的文本变更，跳过。[/yellow]")
+        if is_staged:
+            console.print("[yellow]⚠️ 暂存区为空。你是否忘了运行 `git add`？[/yellow]")
+        else:
+            console.print("[yellow]⚠️ 未发现可评审的变更。[/yellow]")
         return
 
     # 3. 网络代理配置处理

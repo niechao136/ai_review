@@ -4,8 +4,10 @@ import sys
 from enum import Enum
 from pathlib import Path
 from rich.markup import escape
+from rich.table import Table
 
-from ai_review.utils import console
+from .utils import console
+from .config import load_full_config
 
 # --- 核心配置枚举与映射 ---
 
@@ -167,3 +169,41 @@ def remove_cli(hook: HookType = HookType.PRE_PUSH):
         console.print("[dim]已移除 Git Hook。现在，操作代码前将不再触发 AI 自动审阅。[/dim]")
     except Exception as e:
         console.print(f"[bold red]❌ 移除失败:[/bold red] {escape(str(e))}")
+
+
+def get_status():
+    """检查当前 Git 项目中 AI Review 钩子的安装状态"""
+    git_dir = Path(".git")
+
+    if not git_dir.exists():
+        console.print("[red]❌ 错误：当前目录不是一个 Git 仓库。[/red]")
+        return
+
+    hooks_dir = git_dir / "hooks"
+    target_hooks = [item.value for item in HookType if item != HookType.ALL]
+
+    table = Table(title="🛡️ AI Code Reviewer 项目状态")
+    table.add_column("钩子类型", style="cyan")
+    table.add_column("安装状态", style="bold")
+    table.add_column("配置详情", style="dim")
+
+    for hook_name in target_hooks:
+        hook_path = hooks_dir / str(hook_name)
+        is_installed = False
+        detail = "-"
+
+        if hook_path.exists():
+            content = hook_path.read_text(encoding="utf-8")
+            # 通过特征字符串判断是否由本工具注入
+            if "ai-review review" in content:
+                is_installed = True
+                detail = "已注入 AI 评审逻辑"
+
+        status_str = "[green]● 已启用[/green]" if is_installed else "[red]○ 未启用[/red]"
+        table.add_row(str(hook_name), status_str, detail)
+
+    console.print(table)
+
+    # 顺便展示一下全局配置信息（脱敏后）
+    cfg = load_full_config()
+    console.print(f"\n[dim]当前使用模型: {cfg.get('model', '未设置')}[/dim]")
