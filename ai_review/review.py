@@ -9,6 +9,7 @@ from rich.markup import escape
 from .config import load_full_config
 from .core import get_clean_diff
 from .prompts import SYSTEM_PROMPT
+from .report import ensure_gitignore, save_review_report
 from .types import ReviewMode
 from .utils import console
 
@@ -116,6 +117,14 @@ def review_code(ref: str = "HEAD", mode: ReviewMode = ReviewMode.COMMIT):
         else:
             # 如果 AI 未遵循预定义格式给出决策，默认不拦截但给予风险提示
             console.print("\n[yellow]⚠️ 提示：AI 未给出明确的拦截指令，请自行判断。[/yellow]")
+
+
+        ensure_gitignore()
+
+        saved_path = save_review_report(full_response)
+
+        if saved_path:
+            console.print(f"[dim]📝 报告已存至: {saved_path}[/dim]")
 
     except Exception as e:
         # 捕获网络、API 调用或权限等异常情况
